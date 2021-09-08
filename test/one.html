@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- react核心库 -->
+    <script src="../react-demos-master/build/react.development.js"></script>
+    <!-- react-dom 提供与dom相关的功能 -->
+    <script src="../react-demos-master/build/react-dom.development.js"></script>
+    <!-- 将jsx语法转为js语法 -->
+    <script src="../react-demos-master/build/browser.min.js"></script>
+    <!-- proptypes -->
+    <script src="../react-demos-master/build/prop-types.js"></script>
+    <script src="../react-demos-master/build/jquery.min.js"></script>
+</head>
+<body>
+    <div id="example"></div>
+    <!-- script标签需加上text/babel属性，因jsx与js不兼容 -->
+    <script type="text/babel">
+        var name = ['a','b','c'];
+        var arr = [
+            <h1>hello world</h1>,
+            <h1>my first react example</h1>
+        ];
+        var data = "123";
+        // react允许将代码封装成组件，react.createClass方法用于生成一个组件类
+        // 组件类的第一个字母必须大写，只能包含一个顶层标签，否则报错
+        // createClass废除
+        /* var HelloMessage = React.createClass({
+            render: function() {
+                return <h1>Hello {this.props.name}</h1>;
+            }
+        }) */
+        // 添加组件属性，class需要携程className,for属性需要写成htmlFor 因class和for是js的保留字
+        class HelloMessage extends React.Component{
+            render(){
+                // this.props对象的属性与组件的属性一一对应，
+                return (<h1>Hello {this.props.name}</h1>)
+            }
+        }
+
+        // 组件的属性可以接受任意值，字符串，对象，函数等，需要一种机制，验证别人使用组件时，提供的参数是否符合标准
+        class MyTitle extends React.Component{
+            constructor(props){
+                super(props)
+                this.handleClick = this.handleClick.bind(this);
+            }
+            handleClick(){
+                this.refs.myTextInput.focus();
+            }
+            render(){
+                return(
+                    <div>
+                        <input type="text" ref='myTextInput' />    
+                        <input type="button" value="focus" onClick={this.handleClick} />
+                    </div>
+                ); 
+                    // <h1>{this.props.title}</h1>
+            }
+        }
+
+        MyTitle.propTypes={
+            title:PropTypes.string.isRequired
+        }
+        MyTitle.defaultProps = {
+            title :'this is default title'
+        }
+
+        // 组件是一个状态机，一开始有一个初始状态，然后用户互动，导致状态变化从而触发重新渲染ui
+        // this.props表示一旦定义就不再改变的特性，this.state是会随着用户互动而产生变化的特性
+        class LikeButton extends React.Component{
+            constructor(props){
+                super(props)
+                this.state = {liked:false};
+                this.handleClick = this.handleClick.bind(this);
+            }
+            // 这是通过react.createClass用的，es6在构造体中声明
+           /*  getInitialState(){
+                return (
+                    {liked:false}
+                )
+            } */
+            handleClick(){
+                this.setState({liked:!this.state.liked})
+            }
+            render(){
+                var text = this.state.liked ? 'liked' : 'dont like'
+                return (
+                    <p onClick={this.handleClick}>You "{text}" this. Click to toggle</p>
+                )
+            }
+        }
+
+        // state值改变时，自动调用this.render方法 再次渲染组件
+        // 用户跟组件互动的 使用this.state
+        class Input extends React.Component{
+            constructor(props){
+                super(props);
+                this.state = {value:''}
+                this.handleChange = this.handleChange.bind(this);
+            }
+            handleChange(event){
+                this.setState({value:event.target.value});
+            }
+            componentWillUpdate(){
+                ;
+            }
+            componentDidUpdate(){
+                console.log('didupdate')
+            }
+            render(){
+                console.log('render了')
+                var value = this.state.value;
+                return(
+                    <div>
+                        <input type="text" value={value} onChange={this.handleChange} />
+                        <p>{value}</p>
+                    </div>
+                )
+            }
+        }
+
+
+         // 组件的生命周期 will函数在进入状态之前调用，did函数在进入状态之后调用 三种状态共计五种处理函数
+        /* mounting->已插入真实Dom => {componentWillMount、componentDidMount}
+        upDating->正在被重新渲染{componentWillUpdate、componentDidUpdate}
+        unmounting->已移出真实dom {componentWillUnmount}
+        */
+        class Hello extends React.Component{
+            constructor(props){
+                super(props);
+                this.state = {opacity:1.0}
+            }
+            componentDidMount(){
+                this.timer = setInterval(() => {
+                    var opacity = this.state.opacity;
+                    opacity -= .05;
+                    if(opacity<0.1){
+                        opacity=1.0
+                    }
+                    this.setState({
+                        opacity:opacity
+                    })
+                }, 100);
+            }
+            render(){
+                // react组件样式是一个对象。所以第一重大括号表示这是js语法，第二重大括号指的是样式对象
+                return(<div style={{opacity:this.state.opacity}}>hello {this.props.name}</div>)
+            }
+        }
+
+        // this.props.children属性表示组件的所有子节点
+        // this.props.children:如果当前组件没有子节点=>undefined||有一个子节点=>object||有多个子节点=>array 
+        // 使用React.children.map来遍历子节点
+        class NoteList extends React.Component{
+            render(){
+                return (
+                    <ol>
+                        {
+                            React.Children.map(this.props.children,function(child){
+                                return <li>{child}</li>
+                            })
+                        }
+                    </ol>
+                )
+            }
+        }
+
+        // ajax组件的数据源 可以使用componentDidMount方法设置ajax请求，等到请求成功 使用this.setState重新渲染
+        class UserGist extends React.Component{
+            constructor(props){
+                super(props);
+                this.state = { username : '' , url : ''};
+            }
+            componentDidMount(){
+                $.post('http://kg.zhongmakj.com/nzj/lkldq/guidePageConfig',{},function(ret){
+                        this.setState({
+                            username:ret.respData.foot.wx,
+                            url:ret.respData.foot.TEL
+                        })
+                }.bind(this))
+            }
+            render(){
+                return (
+                    <div>{this.state.username}'s tel is {this.state.url}</div>
+                )
+            }
+        }
+
+
+
+        // reactdome.rander 用于将模板转换为html语言 并插入指定节点
+        // 语法：遇到html标签 用<开头，就用html解析规则，遇到代码块，用{ 开头，就用js规则解析
+        // jsx允许直接在模板中插入js变量，如果变量是个数组，就会展开这个数组的全部成员
+        ReactDOM.render(
+            /* <h1>
+                {
+                    name.map(function(name){
+                        return <div>hello,{name}!</div>
+                    })
+                }    
+                <div>{arr}</div>
+            </h1>, */
+            /* <HelloMessage name="namn" />, */
+            /* <NoteList>
+                <span>hello</span>,
+                <span>world</span>
+            </NoteList>, */
+            /* <MyTitle title={data} />, */
+            /* <LikeButton />, */
+            /* <Input />, */
+            /* <Hello name="world" />, */
+            <UserGist />,
+            document.getElementById('example')
+        );
+    </script>
+</body>
+</html>
